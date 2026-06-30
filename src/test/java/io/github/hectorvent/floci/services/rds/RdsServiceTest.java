@@ -326,6 +326,22 @@ class RdsServiceTest {
     }
 
     @Test
+    void tagOperationsRejectNonRdsArn() {
+        AwsException exception = assertThrows(AwsException.class, () ->
+                rdsService.listTagsForResource("arn:aws:s3:::some-bucket"));
+
+        assertEquals("InvalidParameterValue", exception.getErrorCode());
+    }
+
+    @Test
+    void tagOperationsRejectMalformedArn() {
+        AwsException exception = assertThrows(AwsException.class, () ->
+                rdsService.listTagsForResource("arn:aws:rds:incomplete"));
+
+        assertEquals("InvalidParameterValue", exception.getErrorCode());
+    }
+
+    @Test
     void createDbInstanceRejectsMissingDbSubnetGroupBeforeStartingRuntime() {
         AwsException exception = assertThrows(AwsException.class, () ->
                 rdsService.createDbInstance("mydb", "postgres", "13",

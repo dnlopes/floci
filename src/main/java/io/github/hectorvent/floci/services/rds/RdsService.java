@@ -344,8 +344,17 @@ public class RdsService implements Resettable {
 
         String type = "db";
         String id = resourceName;
-        try {
-            String resource = AwsArnUtils.parse(resourceName).resource();
+        if (resourceName.startsWith("arn:")) {
+            AwsArnUtils.Arn arn;
+            try {
+                arn = AwsArnUtils.parse(resourceName);
+            } catch (IllegalArgumentException malformed) {
+                throw new AwsException("InvalidParameterValue", "Invalid resource name: " + resourceName, 400);
+            }
+            if (!"rds".equals(arn.service())) {
+                throw new AwsException("InvalidParameterValue", "Invalid resource name: " + resourceName, 400);
+            }
+            String resource = arn.resource();
             int sep = resource.indexOf(':');
             if (sep >= 0) {
                 type = resource.substring(0, sep);
@@ -353,9 +362,8 @@ public class RdsService implements Resettable {
             } else {
                 id = resource;
             }
-        } catch (IllegalArgumentException notAnArn) {
-            // Not an ARN — fall back to treating the value as a DB instance identifier.
         }
+        // A bare (non-ARN) resource name is treated as a DB instance identifier for backwards compatibility.
 
         String resourceId = id;
         return switch (type) {
