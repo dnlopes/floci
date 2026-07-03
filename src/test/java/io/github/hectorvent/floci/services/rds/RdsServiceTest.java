@@ -336,6 +336,18 @@ class RdsServiceTest {
                 rdsService.listTagsForResource("arn:aws:rds:us-east-1:123456789012:og:some-option-group"));
 
         assertEquals("InvalidParameterValue", exception.getErrorCode());
+        // The type is valid on real AWS; the message must present this as a Floci limitation.
+        assertTrue(exception.getMessage().contains("not yet implemented by Floci"));
+    }
+
+    @Test
+    void tagOperationsRejectTypelessRdsArn() {
+        // Real AWS rejects an RDS ARN whose resource part is not <type>:<id> with InvalidParameterValue;
+        // previously this fell back to a DB-instance lookup and returned DBInstanceNotFound.
+        AwsException exception = assertThrows(AwsException.class, () ->
+                rdsService.listTagsForResource("arn:aws:rds:us-east-1:123456789012:mydb"));
+
+        assertEquals("InvalidParameterValue", exception.getErrorCode());
     }
 
     @Test

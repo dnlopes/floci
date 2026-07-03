@@ -356,12 +356,12 @@ public class RdsService implements Resettable {
             }
             String resource = arn.resource();
             int sep = resource.indexOf(':');
-            if (sep >= 0) {
-                type = resource.substring(0, sep);
-                id = resource.substring(sep + 1);
-            } else {
-                id = resource;
+            if (sep < 0) {
+                // Real AWS requires the resource part of an RDS ARN to be <type>:<id>.
+                throw new AwsException("InvalidParameterValue", "Invalid resource name: " + resourceName, 400);
             }
+            type = resource.substring(0, sep);
+            id = resource.substring(sep + 1);
         }
         // A bare (non-ARN) resource name is treated as a DB instance identifier for backwards compatibility.
 
@@ -388,8 +388,10 @@ public class RdsService implements Resettable {
                     subnetGroups.put(resourceId, group);
                 });
             }
+            // Valid RDS resource types Floci does not model yet (og, pg, snapshot, ...) — taggable
+            // on real AWS, so the message states the Floci limitation rather than AWS semantics.
             default -> throw new AwsException("InvalidParameterValue",
-                    "Tagging is not supported for resource: " + resourceName, 400);
+                    "Tagging for resource type '" + type + "' is not yet implemented by Floci: " + resourceName, 400);
         };
     }
 
