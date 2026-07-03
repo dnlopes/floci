@@ -370,6 +370,9 @@ class RdsServiceTest {
 
         assertEquals(DbInstanceStatus.AVAILABLE, instance.getStatus());
         assertEquals("localhost", instance.getEndpoint().address());
+        // No Docker volume name may be persisted: the mock cluster has a null volume id, so the
+        // fallback would fabricate a name that a later non-mock restore could try to reference.
+        assertNull(instance.getDockerVolumeName());
         verify(containerManager, never()).start(any(), any(), any(), any(), any(), any(), any());
         verify(proxyManager, never()).startProxy(any(), any(), anyBoolean(), anyInt(), any(), anyInt(),
                 any(), any(), any(), any());

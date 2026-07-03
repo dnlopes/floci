@@ -252,9 +252,13 @@ public class RdsService implements Resettable {
             containerId = cluster.getContainerId();
             containerHost = cluster.getContainerHost();
             containerPort = cluster.getContainerPort();
-            instanceDockerVolumeName = cluster.getDockerVolumeName() != null
-                    ? cluster.getDockerVolumeName()
-                    : volumeName(cluster.getVolumeId(), cluster.getDbClusterIdentifier());
+            if (!mock) {
+                // In mock mode the cluster has no volume id, so the fallback would persist a
+                // bogus volume name that a later non-mock restore could try to reference.
+                instanceDockerVolumeName = cluster.getDockerVolumeName() != null
+                        ? cluster.getDockerVolumeName()
+                        : volumeName(cluster.getVolumeId(), cluster.getDbClusterIdentifier());
+            }
             placement = PlacementResolution.fromCluster(cluster);
         } else {
             placement = resolvePlacement(dbSubnetGroupName, availabilityZone, multiAz);
