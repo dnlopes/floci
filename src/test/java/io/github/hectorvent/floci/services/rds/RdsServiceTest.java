@@ -450,9 +450,9 @@ class RdsServiceTest {
 
         RdsService initialService = newService(containerManager, proxyManager,
                 instances, clusters, parameterGroups, clusterParameterGroups);
-        DbCluster cluster = initialService.createDbCluster("cluster1", "aurora-postgresql", "16.3",
+        DbCluster cluster = initialService.createDbCluster("cluster1", "postgres", "16.3",
                 "admin", "secret", "app", false, null);
-        DbInstance member = initialService.createDbInstance("member1", "aurora-postgresql", "16.3",
+        DbInstance member = initialService.createDbInstance("member1", "postgres", "16.3",
                 "admin", "secret", "app", "db.t3.medium",
                 20, false, null, null, "cluster1");
 
@@ -477,11 +477,11 @@ class RdsServiceTest {
         assertEquals(15432, restoredMember.getContainerPort());
 
         verify(restoredContainerManager).start(eq("cluster1"), eq(cluster.getVolumeId()),
-                eq(DatabaseEngine.AURORA_POSTGRESQL), eq("postgres:16.3-alpine"), eq("admin"), eq("secret"), eq("app"));
-        verify(restoredProxyManager).startProxy(eq("cluster1"), eq(DatabaseEngine.AURORA_POSTGRESQL),
+                eq(DatabaseEngine.POSTGRES), eq("postgres:16.3-alpine"), eq("admin"), eq("secret"), eq("app"));
+        verify(restoredProxyManager).startProxy(eq("cluster1"), eq(DatabaseEngine.POSTGRES),
                 eq(false), eq(cluster.getProxyPort()), eq("127.0.0.1"), eq(15432),
                 eq("admin"), eq("secret"), eq("app"), any());
-        verify(restoredProxyManager).startProxy(eq("member1"), eq(DatabaseEngine.AURORA_POSTGRESQL),
+        verify(restoredProxyManager).startProxy(eq("member1"), eq(DatabaseEngine.POSTGRES),
                 eq(false), eq(member.getProxyPort()), eq("127.0.0.1"), eq(15432),
                 eq("admin"), eq("secret"), eq("app"), any());
     }
