@@ -4,12 +4,16 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection
 public enum DatabaseEngine {
-    POSTGRES, MYSQL, MARIADB;
+    POSTGRES, AURORA_POSTGRESQL, MYSQL, AURORA_MYSQL, MARIADB;
 
     public int defaultPort() {
         return switch (this) {
-            case POSTGRES -> 5432;
-            case MYSQL, MARIADB -> 3306;
+            case POSTGRES, AURORA_POSTGRESQL -> 5432;
+            case MYSQL, AURORA_MYSQL, MARIADB -> 3306;
         };
+    }
+
+    public String apiName() {
+        return this.name().toLowerCase().replace("_", "-");
     }
 }
