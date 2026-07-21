@@ -9,12 +9,4 @@ public enum DatabaseEngine {
             case MYSQL, AURORA_MYSQL, MARIADB -> 3306;
         };
     }
-
-    public DatabaseEngine baseEngine() {
-        return switch (this) {
-            case POSTGRES, AURORA_POSTGRESQL -> POSTGRES;
-            case MYSQL, AURORA_MYSQL -> MYSQL;
-            case MARIADB -> MARIADB;
-        };
-    }
 }

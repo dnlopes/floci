@@ -744,12 +744,10 @@ public class RdsService {
     }
 
     private String imageForEngine(DatabaseEngine engine, String engineVersion) {
-        DatabaseEngine base = engine.baseEngine();
-        String defaultImage = switch (base) {
-            case POSTGRES -> config.services().rds().defaultPostgresImage();
-            case MYSQL -> config.services().rds().defaultMysqlImage();
+        String defaultImage = switch (engine) {
+            case POSTGRES, AURORA_POSTGRESQL -> config.services().rds().defaultPostgresImage();
+            case MYSQL, AURORA_MYSQL -> config.services().rds().defaultMysqlImage();
             case MARIADB -> config.services().rds().defaultMariadbImage();
-            default -> throw new IllegalArgumentException("Unknown base engine: " + base);
         };
         return imageForRequestedVersion(defaultImage, engineVersion);
     }
