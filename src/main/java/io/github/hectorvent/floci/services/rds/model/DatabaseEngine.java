@@ -9,4 +9,8 @@ public enum DatabaseEngine {
             case MYSQL, AURORA_MYSQL, MARIADB -> 3306;
         };
     }
+
+    public String apiName() {
+        return this.name().toLowerCase().replace("_", "-");
+    }
 }

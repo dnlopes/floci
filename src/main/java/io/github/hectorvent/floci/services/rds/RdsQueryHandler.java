@@ -5,7 +5,6 @@ import io.github.hectorvent.floci.core.common.AwsException;
 import io.github.hectorvent.floci.core.common.AwsNamespaces;
 import io.github.hectorvent.floci.core.common.AwsQueryResponse;
 import io.github.hectorvent.floci.core.common.XmlBuilder;
-import io.github.hectorvent.floci.services.rds.model.DatabaseEngine;
 import io.github.hectorvent.floci.services.rds.model.DbCluster;
 import io.github.hectorvent.floci.services.rds.model.DbClusterParameterGroup;
 import io.github.hectorvent.floci.services.rds.model.DbEndpoint;
@@ -589,7 +588,7 @@ public class RdsQueryHandler {
 
     private String dbInstanceInnerXml(DbInstance i) {
         DbEndpoint ep = i.getEndpoint();
-        String engineStr = i.getEngine() != null ? engineNameFromEnum(i.getEngine()) : "";
+        String engineStr = i.getEngine() != null ? i.getEngine().apiName() : "";
         String statusStr = i.getStatus() != null ? statusLabel(i.getStatus()) : "available";
 
         XmlBuilder xml = new XmlBuilder()
@@ -737,7 +736,7 @@ public class RdsQueryHandler {
     private String dbClusterInnerXml(DbCluster c) {
         DbEndpoint ep = c.getEndpoint();
         DbEndpoint readerEp = c.getReaderEndpoint();
-        String engineStr = c.getEngine() != null ? engineNameFromEnum(c.getEngine()) : "";
+        String engineStr = c.getEngine() != null ? c.getEngine().apiName() : "";
         String statusStr = c.getStatus() != null ? statusLabel(c.getStatus()) : "available";
 
         XmlBuilder xml = new XmlBuilder()
@@ -805,10 +804,6 @@ public class RdsQueryHandler {
                 .elem("DBParameterGroupFamily", g.getDbParameterGroupFamily())
                 .elem("Description", g.getDescription())
                 .build();
-    }
-
-    private static String engineNameFromEnum(DatabaseEngine engine) {
-        return engine.name().toLowerCase().replace("_", "-");
     }
 
     private String statusLabel(DbInstanceStatus status) {

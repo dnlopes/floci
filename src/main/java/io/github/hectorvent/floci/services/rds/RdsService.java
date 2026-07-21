@@ -326,8 +326,7 @@ public class RdsService {
 
     private static String managedMasterSecretString(DbInstance instance) {
         try {
-            String engineStr = instance.getEngine() != null ?
-                    instance.getEngine().name().toLowerCase().replace("_", "-") : "";
+            String engineStr = instance.getEngine() != null ? instance.getEngine().apiName() : "";
             return JSON.writeValueAsString(Map.of(
                     "username", instance.getMasterUsername(),
                     "password", instance.getMasterPassword(),
