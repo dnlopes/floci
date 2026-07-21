@@ -2,6 +2,7 @@ package io.github.hectorvent.floci.services.rds;
 
 import io.github.hectorvent.floci.config.EmulatorConfig;
 import io.github.hectorvent.floci.core.common.AwsException;
+import io.github.hectorvent.floci.services.rds.model.DatabaseEngine;
 import io.github.hectorvent.floci.services.rds.model.DbCluster;
 import io.github.hectorvent.floci.services.rds.model.DbClusterParameterGroup;
 import io.github.hectorvent.floci.services.rds.model.DbInstance;
@@ -518,29 +519,29 @@ class RdsQueryHandlerTest {
     }
 
     @Test
-    void describeDbInstances_returnsOriginalEngineParameter() {
+    void describeDbInstances_returnsAuroraPostgresqlCorrectly() {
         DbInstance instance = makeInstance("mydb");
-        instance.setEngineParameter("aurora-postgresql");
+        instance.setEngine(DatabaseEngine.AURORA_POSTGRESQL);
         when(service.listDbInstances(null)).thenReturn(List.of(instance));
 
         Response response = handler.handle("DescribeDBInstances", params());
 
         String body = (String) response.getEntity();
         assertTrue(body.contains("<Engine>aurora-postgresql</Engine>"),
-                "Engine parameter should be returned as 'aurora-postgresql', not 'postgres'");
+                "Engine should be returned as 'aurora-postgresql'");
     }
 
     @Test
-    void describeDbClusters_returnsOriginalEngineParameter() {
+    void describeDbClusters_returnsAuroraMysqlCorrectly() {
         DbCluster cluster = makeCluster("mycluster");
-        cluster.setEngineParameter("aurora-mysql");
+        cluster.setEngine(DatabaseEngine.AURORA_MYSQL);
         when(service.listDbClusters(null)).thenReturn(List.of(cluster));
 
         Response response = handler.handle("DescribeDBClusters", params());
 
         String body = (String) response.getEntity();
         assertTrue(body.contains("<Engine>aurora-mysql</Engine>"),
-                "Engine parameter should be returned as 'aurora-mysql', not 'mysql'");
+                "Engine should be returned as 'aurora-mysql'");
     }
 
     // ──────────────────────────── Helpers ────────────────────────────

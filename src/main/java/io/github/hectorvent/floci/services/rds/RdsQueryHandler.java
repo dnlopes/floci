@@ -5,6 +5,7 @@ import io.github.hectorvent.floci.core.common.AwsException;
 import io.github.hectorvent.floci.core.common.AwsNamespaces;
 import io.github.hectorvent.floci.core.common.AwsQueryResponse;
 import io.github.hectorvent.floci.core.common.XmlBuilder;
+import io.github.hectorvent.floci.services.rds.model.DatabaseEngine;
 import io.github.hectorvent.floci.services.rds.model.DbCluster;
 import io.github.hectorvent.floci.services.rds.model.DbClusterParameterGroup;
 import io.github.hectorvent.floci.services.rds.model.DbEndpoint;
@@ -588,14 +589,13 @@ public class RdsQueryHandler {
 
     private String dbInstanceInnerXml(DbInstance i) {
         DbEndpoint ep = i.getEndpoint();
-        String engineStr = i.getEngineParameter() != null ? i.getEngineParameter() :
-                           (i.getEngine() != null ? i.getEngine().name().toLowerCase() : "");
+        String engineStr = i.getEngine() != null ? engineNameFromEnum(i.getEngine()) : "";
         String statusStr = i.getStatus() != null ? statusLabel(i.getStatus()) : "available";
 
         XmlBuilder xml = new XmlBuilder()
                 .elem("DBInstanceIdentifier", i.getDbInstanceIdentifier())
                 .elem("DBInstanceStatus", statusStr)
-                .elem("Engine", engineStr.toLowerCase())
+                .elem("Engine", engineStr)
                 .elem("EngineVersion", i.getEngineVersion())
                 .elem("MasterUsername", i.getMasterUsername());
         if (i.getDbName() != null && !i.getDbName().isBlank()) {
@@ -737,14 +737,13 @@ public class RdsQueryHandler {
     private String dbClusterInnerXml(DbCluster c) {
         DbEndpoint ep = c.getEndpoint();
         DbEndpoint readerEp = c.getReaderEndpoint();
-        String engineStr = c.getEngineParameter() != null ? c.getEngineParameter() :
-                           (c.getEngine() != null ? c.getEngine().name().toLowerCase() : "");
+        String engineStr = c.getEngine() != null ? engineNameFromEnum(c.getEngine()) : "";
         String statusStr = c.getStatus() != null ? statusLabel(c.getStatus()) : "available";
 
         XmlBuilder xml = new XmlBuilder()
                 .elem("DBClusterIdentifier", c.getDbClusterIdentifier())
                 .elem("Status", statusStr)
-                .elem("Engine", engineStr.toLowerCase())
+                .elem("Engine", engineStr)
                 .elem("EngineVersion", c.getEngineVersion())
                 .elem("MasterUsername", c.getMasterUsername());
         if (c.getDatabaseName() != null && !c.getDatabaseName().isBlank()) {
@@ -806,6 +805,10 @@ public class RdsQueryHandler {
                 .elem("DBParameterGroupFamily", g.getDbParameterGroupFamily())
                 .elem("Description", g.getDescription())
                 .build();
+    }
+
+    private static String engineNameFromEnum(DatabaseEngine engine) {
+        return engine.name().toLowerCase().replace("_", "-");
     }
 
     private String statusLabel(DbInstanceStatus status) {

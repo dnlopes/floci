@@ -239,7 +239,6 @@ public class RdsService {
         DbInstance instance = new DbInstance(id, engine, engineVersion, masterUsername, masterPassword,
                 dbName, dbInstanceClass, allocatedStorage, DbInstanceStatus.AVAILABLE,
                 endpoint, iamEnabled, paramGroupName, dbClusterIdentifier, Instant.now(), proxyPort);
-        instance.setEngineParameter(engineParam);
         instance.setDbSubnetGroupName(dbSubnetGroupName);
         instance.setContainerId(containerId);
         instance.setContainerHost(containerHost);
@@ -327,8 +326,8 @@ public class RdsService {
 
     private static String managedMasterSecretString(DbInstance instance) {
         try {
-            String engineStr = instance.getEngineParameter() != null ? instance.getEngineParameter() :
-                               (instance.getEngine() != null ? instance.getEngine().name().toLowerCase() : "");
+            String engineStr = instance.getEngine() != null ?
+                    instance.getEngine().name().toLowerCase().replace("_", "-") : "";
             return JSON.writeValueAsString(Map.of(
                     "username", instance.getMasterUsername(),
                     "password", instance.getMasterPassword(),
@@ -500,7 +499,6 @@ public class RdsService {
         DbCluster cluster = new DbCluster(id, engine, engineVersion, masterUsername, masterPassword,
                 databaseName, DbInstanceStatus.AVAILABLE, endpoint, endpoint,
                 iamEnabled, new ArrayList<>(), paramGroupName, Instant.now(), proxyPort);
-        cluster.setEngineParameter(engineParam);
         cluster.setContainerId(handle.getContainerId());
         cluster.setContainerHost(handle.getHost());
         cluster.setContainerPort(handle.getPort());
@@ -735,18 +733,23 @@ public class RdsService {
             return DatabaseEngine.POSTGRES;
         }
         return switch (engineParam.toLowerCase()) {
-            case "postgres", "aurora-postgresql" -> DatabaseEngine.POSTGRES;
-            case "mysql", "aurora-mysql", "aurora" -> DatabaseEngine.MYSQL;
+            case "postgres" -> DatabaseEngine.POSTGRES;
+            case "aurora-postgresql" -> DatabaseEngine.AURORA_POSTGRESQL;
+            case "mysql" -> DatabaseEngine.MYSQL;
+            case "aurora-mysql" -> DatabaseEngine.AURORA_MYSQL;
+            case "aurora" -> DatabaseEngine.AURORA_MYSQL;
             case "mariadb" -> DatabaseEngine.MARIADB;
             default -> throw new AwsException("InvalidParameterValue", invalidParameterValueMessage(), 400);
         };
     }
 
     private String imageForEngine(DatabaseEngine engine, String engineVersion) {
-        String defaultImage = switch (engine) {
+        DatabaseEngine base = engine.baseEngine();
+        String defaultImage = switch (base) {
             case POSTGRES -> config.services().rds().defaultPostgresImage();
             case MYSQL -> config.services().rds().defaultMysqlImage();
             case MARIADB -> config.services().rds().defaultMariadbImage();
+            default -> throw new IllegalArgumentException("Unknown base engine: " + base);
         };
         return imageForRequestedVersion(defaultImage, engineVersion);
     }

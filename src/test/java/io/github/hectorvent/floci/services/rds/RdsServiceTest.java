@@ -477,11 +477,11 @@ class RdsServiceTest {
         assertEquals(15432, restoredMember.getContainerPort());
 
         verify(restoredContainerManager).start(eq("cluster1"), eq(cluster.getVolumeId()),
-                eq(DatabaseEngine.POSTGRES), eq("postgres:16.3-alpine"), eq("admin"), eq("secret"), eq("app"));
-        verify(restoredProxyManager).startProxy(eq("cluster1"), eq(DatabaseEngine.POSTGRES),
+                eq(DatabaseEngine.AURORA_POSTGRESQL), eq("postgres:16.3-alpine"), eq("admin"), eq("secret"), eq("app"));
+        verify(restoredProxyManager).startProxy(eq("cluster1"), eq(DatabaseEngine.AURORA_POSTGRESQL),
                 eq(false), eq(cluster.getProxyPort()), eq("127.0.0.1"), eq(15432),
                 eq("admin"), eq("secret"), eq("app"), any());
-        verify(restoredProxyManager).startProxy(eq("member1"), eq(DatabaseEngine.POSTGRES),
+        verify(restoredProxyManager).startProxy(eq("member1"), eq(DatabaseEngine.AURORA_POSTGRESQL),
                 eq(false), eq(member.getProxyPort()), eq("127.0.0.1"), eq(15432),
                 eq("admin"), eq("secret"), eq("app"), any());
     }
