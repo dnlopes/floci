@@ -450,9 +450,9 @@ class RdsServiceTest {
 
         RdsService initialService = newService(containerManager, proxyManager,
                 instances, clusters, parameterGroups, clusterParameterGroups);
-        DbCluster cluster = initialService.createDbCluster("cluster1", "aurora-postgresql", "16.3",
+        DbCluster cluster = initialService.createDbCluster("cluster1", "postgres", "16.3",
                 "admin", "secret", "app", false, null);
-        DbInstance member = initialService.createDbInstance("member1", "aurora-postgresql", "16.3",
+        DbInstance member = initialService.createDbInstance("member1", "postgres", "16.3",
                 "admin", "secret", "app", "db.t3.medium",
                 20, false, null, null, "cluster1");
 
@@ -477,13 +477,74 @@ class RdsServiceTest {
         assertEquals(15432, restoredMember.getContainerPort());
 
         verify(restoredContainerManager).start(eq("cluster1"), eq(cluster.getVolumeId()),
-                eq(DatabaseEngine.AURORA_POSTGRESQL), eq("postgres:16.3-alpine"), eq("admin"), eq("secret"), eq("app"));
-        verify(restoredProxyManager).startProxy(eq("cluster1"), eq(DatabaseEngine.AURORA_POSTGRESQL),
+                eq(DatabaseEngine.POSTGRES), eq("postgres:16.3-alpine"), eq("admin"), eq("secret"), eq("app"));
+        verify(restoredProxyManager).startProxy(eq("cluster1"), eq(DatabaseEngine.POSTGRES),
                 eq(false), eq(cluster.getProxyPort()), eq("127.0.0.1"), eq(15432),
                 eq("admin"), eq("secret"), eq("app"), any());
-        verify(restoredProxyManager).startProxy(eq("member1"), eq(DatabaseEngine.AURORA_POSTGRESQL),
+        verify(restoredProxyManager).startProxy(eq("member1"), eq(DatabaseEngine.POSTGRES),
                 eq(false), eq(member.getProxyPort()), eq("127.0.0.1"), eq(15432),
                 eq("admin"), eq("secret"), eq("app"), any());
+    }
+
+    @Test
+    void createDbInstanceWithAuroraPostgresql() {
+        RdsContainerManager containerManager = mock(RdsContainerManager.class);
+        when(containerManager.start(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new RdsContainerHandle("container-id", "instance", "localhost", 5432));
+
+        DbInstance instance = rdsService.createDbInstance("aurora-pg", "aurora-postgresql", "16.3",
+                "admin", "password", "db", "db.t3.micro", 20, false, null, null, null);
+
+        assertEquals(DatabaseEngine.AURORA_POSTGRESQL, instance.getEngine());
+        assertEquals("aurora-postgresql", instance.getEngine().apiName());
+    }
+
+    @Test
+    void createDbInstanceWithAuroraMysql() {
+        RdsContainerManager containerManager = mock(RdsContainerManager.class);
+        when(containerManager.start(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new RdsContainerHandle("container-id", "instance", "localhost", 3306));
+
+        DbInstance instance = rdsService.createDbInstance("aurora-mysql", "aurora-mysql", "8.0",
+                "admin", "password", "db", "db.t3.micro", 20, false, null, null, null);
+
+        assertEquals(DatabaseEngine.AURORA_MYSQL, instance.getEngine());
+        assertEquals("aurora-mysql", instance.getEngine().apiName());
+    }
+
+    @Test
+    void createDbClusterWithAuroraPostgresql() {
+        RdsContainerManager containerManager = mock(RdsContainerManager.class);
+        when(containerManager.start(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new RdsContainerHandle("container-id", "cluster", "localhost", 5432));
+
+        DbCluster cluster = rdsService.createDbCluster("aurora-cluster-pg", "aurora-postgresql", "16.3",
+                "admin", "password", "db", false, null);
+
+        assertEquals(DatabaseEngine.AURORA_POSTGRESQL, cluster.getEngine());
+        assertEquals("aurora-postgresql", cluster.getEngine().apiName());
+    }
+
+    @Test
+    void createDbClusterWithAuroraMysql() {
+        RdsContainerManager containerManager = mock(RdsContainerManager.class);
+        when(containerManager.start(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new RdsContainerHandle("container-id", "cluster", "localhost", 3306));
+
+        DbCluster cluster = rdsService.createDbCluster("aurora-cluster-mysql", "aurora-mysql", "8.0",
+                "admin", "password", "db", false, null);
+
+        assertEquals(DatabaseEngine.AURORA_MYSQL, cluster.getEngine());
+        assertEquals("aurora-mysql", cluster.getEngine().apiName());
+    }
+
+    @Test
+    void databaseEngineApiNameFormatting() {
+        assertEquals("postgres", DatabaseEngine.POSTGRES.apiName());
+        assertEquals("aurora-postgresql", DatabaseEngine.AURORA_POSTGRESQL.apiName());
+        assertEquals("mysql", DatabaseEngine.MYSQL.apiName());
+        assertEquals("aurora-mysql", DatabaseEngine.AURORA_MYSQL.apiName());
+        assertEquals("mariadb", DatabaseEngine.MARIADB.apiName());
     }
 
     private RdsService newService(RdsContainerManager containerManager,
