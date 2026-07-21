@@ -630,13 +630,13 @@ public class RdsQueryHandler {
 
     private String dbInstanceInnerXml(DbInstance i) {
         DbEndpoint ep = i.getEndpoint();
-        String engineStr = i.getEngine() != null ? i.getEngine().name() : "";
+        String engineStr = i.getEngine() != null ? i.getEngine().apiName() : "";
         String statusStr = i.getStatus() != null ? statusLabel(i.getStatus()) : "available";
 
         XmlBuilder xml = new XmlBuilder()
                 .elem("DBInstanceIdentifier", i.getDbInstanceIdentifier())
                 .elem("DBInstanceStatus", statusStr)
-                .elem("Engine", engineStr.toLowerCase())
+                .elem("Engine", engineStr)
                 .elem("EngineVersion", i.getEngineVersion())
                 .elem("MasterUsername", i.getMasterUsername());
         if (i.getDbName() != null && !i.getDbName().isBlank()) {
@@ -760,13 +760,13 @@ public class RdsQueryHandler {
     private String dbClusterInnerXml(DbCluster c) {
         DbEndpoint ep = c.getEndpoint();
         DbEndpoint readerEp = c.getReaderEndpoint();
-        String engineStr = c.getEngine() != null ? c.getEngine().name() : "";
+        String engineStr = c.getEngine() != null ? c.getEngine().apiName() : "";
         String statusStr = c.getStatus() != null ? statusLabel(c.getStatus()) : "available";
 
         XmlBuilder xml = new XmlBuilder()
                 .elem("DBClusterIdentifier", c.getDbClusterIdentifier())
                 .elem("Status", statusStr)
-                .elem("Engine", engineStr.toLowerCase())
+                .elem("Engine", engineStr)
                 .elem("EngineVersion", c.getEngineVersion())
                 .elem("MasterUsername", c.getMasterUsername());
         if (c.getDatabaseName() != null && !c.getDatabaseName().isBlank()) {

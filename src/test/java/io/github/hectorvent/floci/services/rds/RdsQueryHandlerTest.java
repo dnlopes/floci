@@ -785,6 +785,32 @@ class RdsQueryHandlerTest {
         assertTrue(((String) response.getEntity()).contains("DBSubnetGroupNotFoundFault"));
     }
 
+    @Test
+    void describeDbInstances_returnsAuroraPostgresqlCorrectly() {
+        DbInstance instance = makeInstance("aurora-pg");
+        instance.setEngine(io.github.hectorvent.floci.services.rds.model.DatabaseEngine.AURORA_POSTGRESQL);
+        when(service.listDbInstances(null)).thenReturn(List.of(instance));
+
+        Response response = handler.handle("DescribeDBInstances", params());
+
+        assertEquals(200, response.getStatus());
+        String body = (String) response.getEntity();
+        assertTrue(body.contains("<Engine>aurora-postgresql</Engine>"), "Expected aurora-postgresql in response, got: " + body);
+    }
+
+    @Test
+    void describeDbClusters_returnsAuroraMysqlCorrectly() {
+        DbCluster cluster = makeCluster("aurora-mysql-cluster");
+        cluster.setEngine(io.github.hectorvent.floci.services.rds.model.DatabaseEngine.AURORA_MYSQL);
+        when(service.listDbClusters(null)).thenReturn(List.of(cluster));
+
+        Response response = handler.handle("DescribeDBClusters", params());
+
+        assertEquals(200, response.getStatus());
+        String body = (String) response.getEntity();
+        assertTrue(body.contains("<Engine>aurora-mysql</Engine>"), "Expected aurora-mysql in response, got: " + body);
+    }
+
     // ──────────────────────────── Helpers ────────────────────────────
 
     private static MultivaluedMap<String, String> params() {
