@@ -25,6 +25,7 @@ public class DynamoDbJsonHandler {
 
     private static final String DEFAULT_ACCOUNT_ID = "000000000000";
     private static final String SSE_TYPE_KMS = "KMS";
+    private static final Set<String> VALID_SSE_TYPES = Set.of("AES256", "KMS");
 
     private final DynamoDbService dynamoDbService;
     private final DynamoDbStreamService dynamoDbStreamService;
@@ -209,6 +210,7 @@ public class DynamoDbJsonHandler {
         JsonNode sseSpec = request.path("SSESpecification");
         if (!sseSpec.isMissingNode() && sseSpec.path("Enabled").asBoolean(false)) {
             String sseType = sseSpec.path("SSEType").asText(SSE_TYPE_KMS);
+            validateSseType(sseType);
             table.setSseEnabled(true);
             table.setSseType(sseType);
             if (SSE_TYPE_KMS.equals(sseType)) {
@@ -219,9 +221,20 @@ public class DynamoDbJsonHandler {
             }
         }
 
+        dynamoDbService.persistTable(table.getTableName(), table, region);
+
         ObjectNode response = objectMapper.createObjectNode();
         response.set("TableDescription", tableToNode(table));
         return Response.ok(response).build();
+    }
+
+    private void validateSseType(String sseType) {
+        if (!VALID_SSE_TYPES.contains(sseType)) {
+            throw new AwsException("ValidationException",
+                    "1 validation error detected: Value '" + sseType
+                    + "' at 'sSESpecification.sSEType' failed to satisfy constraint: "
+                    + "Member must satisfy enum value set: [AES256, KMS]", 400);
+        }
     }
 
     private Response handleDeleteTable(JsonNode request, String region) {
@@ -1203,6 +1216,7 @@ public class DynamoDbJsonHandler {
         if (!sseSpec.isMissingNode()) {
             if (sseSpec.path("Enabled").asBoolean(false)) {
                 String sseType = sseSpec.path("SSEType").asText(SSE_TYPE_KMS);
+                validateSseType(sseType);
                 table.setSseEnabled(true);
                 table.setSseType(sseType);
                 if (SSE_TYPE_KMS.equals(sseType)) {
@@ -1219,6 +1233,8 @@ public class DynamoDbJsonHandler {
                 table.setKmsMasterKeyArn(null);
             }
         }
+
+        dynamoDbService.persistTable(table.getTableName(), table, region);
 
         ObjectNode response = objectMapper.createObjectNode();
         response.set("TableDescription", tableToNode(table));

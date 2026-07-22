@@ -336,6 +336,120 @@ class DynamoDbIntegrationTest {
     }
 
     @Test
+    void createTableWithAes256SseOmitsKmsMasterKeyArn() {
+        given()
+            .header("X-Amz-Target", "DynamoDB_20120810.CreateTable")
+            .contentType(DYNAMODB_CONTENT_TYPE)
+            .body("""
+                {
+                    "TableName": "Aes256SseTable",
+                    "KeySchema": [{"AttributeName": "pk", "KeyType": "HASH"}],
+                    "AttributeDefinitions": [{"AttributeName": "pk", "AttributeType": "S"}],
+                    "BillingMode": "PAY_PER_REQUEST",
+                    "SSESpecification": {"Enabled": true, "SSEType": "AES256"}
+                }
+                """)
+        .when()
+            .post("/")
+        .then()
+            .statusCode(200)
+            .body("TableDescription.SSEDescription.Status", equalTo("ENABLED"))
+            .body("TableDescription.SSEDescription.SSEType", equalTo("AES256"))
+            .body("TableDescription.SSEDescription.KMSMasterKeyArn", nullValue());
+
+        given()
+            .header("X-Amz-Target", "DynamoDB_20120810.DescribeTable")
+            .contentType(DYNAMODB_CONTENT_TYPE)
+            .body("""
+                {"TableName": "Aes256SseTable"}
+                """)
+        .when()
+            .post("/")
+        .then()
+            .statusCode(200)
+            .body("Table.SSEDescription.Status", equalTo("ENABLED"))
+            .body("Table.SSEDescription.SSEType", equalTo("AES256"))
+            .body("Table.SSEDescription.KMSMasterKeyArn", nullValue());
+
+        given()
+            .header("X-Amz-Target", "DynamoDB_20120810.DeleteTable")
+            .contentType(DYNAMODB_CONTENT_TYPE)
+            .body("""
+                {"TableName": "Aes256SseTable"}
+                """)
+        .when()
+            .post("/")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
+    void createTableWithInvalidSseTypeFailsValidation() {
+        given()
+            .header("X-Amz-Target", "DynamoDB_20120810.CreateTable")
+            .contentType(DYNAMODB_CONTENT_TYPE)
+            .body("""
+                {
+                    "TableName": "InvalidSseTypeTable",
+                    "KeySchema": [{"AttributeName": "pk", "KeyType": "HASH"}],
+                    "AttributeDefinitions": [{"AttributeName": "pk", "AttributeType": "S"}],
+                    "BillingMode": "PAY_PER_REQUEST",
+                    "SSESpecification": {"Enabled": true, "SSEType": "BOGUS"}
+                }
+                """)
+        .when()
+            .post("/")
+        .then()
+            .statusCode(400)
+            .body("__type", equalTo("ValidationException"));
+    }
+
+    @Test
+    void updateTableWithInvalidSseTypeFailsValidation() {
+        given()
+            .header("X-Amz-Target", "DynamoDB_20120810.CreateTable")
+            .contentType(DYNAMODB_CONTENT_TYPE)
+            .body("""
+                {
+                    "TableName": "UpdateInvalidSseTypeTable",
+                    "KeySchema": [{"AttributeName": "pk", "KeyType": "HASH"}],
+                    "AttributeDefinitions": [{"AttributeName": "pk", "AttributeType": "S"}],
+                    "BillingMode": "PAY_PER_REQUEST"
+                }
+                """)
+        .when()
+            .post("/")
+        .then()
+            .statusCode(200);
+
+        given()
+            .header("X-Amz-Target", "DynamoDB_20120810.UpdateTable")
+            .contentType(DYNAMODB_CONTENT_TYPE)
+            .body("""
+                {
+                    "TableName": "UpdateInvalidSseTypeTable",
+                    "SSESpecification": {"Enabled": true, "SSEType": "BOGUS"}
+                }
+                """)
+        .when()
+            .post("/")
+        .then()
+            .statusCode(400)
+            .body("__type", equalTo("ValidationException"));
+
+        given()
+            .header("X-Amz-Target", "DynamoDB_20120810.DeleteTable")
+            .contentType(DYNAMODB_CONTENT_TYPE)
+            .body("""
+                {"TableName": "UpdateInvalidSseTypeTable"}
+                """)
+        .when()
+            .post("/")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
     void createTableWithGsiAndLsi() {
         given()
             .header("X-Amz-Target", "DynamoDB_20120810.CreateTable")
