@@ -208,9 +208,15 @@ public class DynamoDbJsonHandler {
 
         JsonNode sseSpec = request.path("SSESpecification");
         if (!sseSpec.isMissingNode() && sseSpec.path("Enabled").asBoolean(false)) {
+            String sseType = sseSpec.path("SSEType").asText(SSE_TYPE_KMS);
             table.setSseEnabled(true);
-            table.setSseType(SSE_TYPE_KMS);
-            table.setKmsMasterKeyArn(defaultKmsMasterKeyArn(region));
+            table.setSseType(sseType);
+            if (SSE_TYPE_KMS.equals(sseType)) {
+                JsonNode kmsMasterKeyId = sseSpec.path("KMSMasterKeyId");
+                table.setKmsMasterKeyArn(!kmsMasterKeyId.isMissingNode() && !kmsMasterKeyId.isNull()
+                        ? kmsMasterKeyId.asText()
+                        : defaultKmsMasterKeyArn(region));
+            }
         }
 
         ObjectNode response = objectMapper.createObjectNode();
@@ -1193,6 +1199,27 @@ public class DynamoDbJsonHandler {
             }
         }
 
+        JsonNode sseSpec = request.path("SSESpecification");
+        if (!sseSpec.isMissingNode()) {
+            if (sseSpec.path("Enabled").asBoolean(false)) {
+                String sseType = sseSpec.path("SSEType").asText(SSE_TYPE_KMS);
+                table.setSseEnabled(true);
+                table.setSseType(sseType);
+                if (SSE_TYPE_KMS.equals(sseType)) {
+                    JsonNode kmsMasterKeyId = sseSpec.path("KMSMasterKeyId");
+                    table.setKmsMasterKeyArn(!kmsMasterKeyId.isMissingNode() && !kmsMasterKeyId.isNull()
+                            ? kmsMasterKeyId.asText()
+                            : defaultKmsMasterKeyArn(region));
+                } else {
+                    table.setKmsMasterKeyArn(null);
+                }
+            } else {
+                table.setSseEnabled(false);
+                table.setSseType(null);
+                table.setKmsMasterKeyArn(null);
+            }
+        }
+
         ObjectNode response = objectMapper.createObjectNode();
         response.set("TableDescription", tableToNode(table));
         return Response.ok(response).build();
@@ -1887,10 +1914,13 @@ public class DynamoDbJsonHandler {
         if (table.isSseEnabled()) {
             ObjectNode sseDescription = objectMapper.createObjectNode();
             sseDescription.put("Status", "ENABLED");
-            sseDescription.put("SSEType", table.getSseType() != null ? table.getSseType() : SSE_TYPE_KMS);
-            sseDescription.put("KMSMasterKeyArn", table.getKmsMasterKeyArn() != null
-                    ? table.getKmsMasterKeyArn()
-                    : defaultKmsMasterKeyArn(AwsArnUtils.regionOrDefault(table.getTableArn(), "us-east-1")));
+            String sseType = table.getSseType() != null ? table.getSseType() : SSE_TYPE_KMS;
+            sseDescription.put("SSEType", sseType);
+            if (SSE_TYPE_KMS.equals(sseType)) {
+                sseDescription.put("KMSMasterKeyArn", table.getKmsMasterKeyArn() != null
+                        ? table.getKmsMasterKeyArn()
+                        : defaultKmsMasterKeyArn(AwsArnUtils.regionOrDefault(table.getTableArn(), "us-east-1")));
+            }
             node.set("SSEDescription", sseDescription);
         }
 
